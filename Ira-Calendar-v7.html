@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ira Calendar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+        }
+        .calendar {
+            width: 700px;
+            margin: 0 auto;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        th {
+            background-color: #0066cc;
+            color: #fff;
+        }
+        td {
+            background-color: #e6f2ff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calendar">
+    <h2>Ira Calendar</h2>
+
+    <label for="age">Select Age:</label>
+    <select id="age">
+        <option value="Age of Kings">Age of Kings</option>
+        <option value="Age of Division">Age of Division</option>
+        <option value="Age of Anger">Age of Anger</option>
+        <option value="Age of Unification">Age of Unification</option>
+        <option value="Age of Strength">Age of Strength</option>
+    </select>
+
+    <label for="year">Select Year:</label>
+    <select id="year">
+        <!-- Years dynamically added by JavaScript -->
+    </select>
+
+    <label for="season">Select Season:</label>
+    <select id="season">
+        <option value="Frostheim">Frostheim (Winter)</option>
+        <option value="Hertzfall">Hertzfall (Autumn)</option>
+        <option value="Sonnendor">Sonnendor (Summer)</option>
+        <option value="Lenzing">Lenzing (Spring)</option>
+    </select>
+
+    <label for="phase">Select Phase:</label>
+    <select id="phase">
+        <option value="early">Early (29 days)</option>
+        <option value="high">High (30 days)</option>
+        <option value="late">Late (31 days)</option>
+    </select>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Morstag</th>
+                <th>Torstag</th>
+                <th>Chaunorstag</th>
+                <th>Tyrstag</th>
+                <th>Tempusdae</th>
+                <th>Selunstag</th>
+                <th>Suneos</th>
+            </tr>
+        </thead>
+        <tbody id="calendarBody">
+            <!-- Calendar will be generated here -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const ageSelect = document.getElementById('age');
+    const yearSelect = document.getElementById('year');
+    const seasonSelect = document.getElementById('season');
+    const phaseSelect = document.getElementById('phase');
+    const calendarBody = document.getElementById('calendarBody');
+
+    const ageYears = {
+        'Age of Kings': 372,
+        'Age of Division': 129,
+        'Age of Anger': 86,
+        'Age of Unification': 214,
+        'Age of Strength': Infinity // No limit for Age of Strength
+    };
+
+    const daysOfWeek = ['Morstag', 'Torstag', 'Chaunorstag', 'Tyrstag', 'Tempusdae', 'Selunstag', 'Suneos'];
+
+    // Fixed starting point: Year 1, Early Frostheim starts on Morstag the 1st
+    const startDayOfWeek = 0; // Morstag
+    const startYear = 1;
+    const startSeason = 'Frostheim';
+    const startPhase = 'early';
+
+    function populateYearOptions() {
+        const selectedAge = ageSelect.value;
+        const totalYears = ageYears[selectedAge];
+
+        // Clear existing years
+        yearSelect.innerHTML = '';
+
+        // Populate the years based on the selected age
+        let maxYear = totalYears === Infinity ? 500 : totalYears; // Limit for other ages, allow unlimited for Age of Strength
+        for (let i = 1; i <= maxYear; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            yearSelect.appendChild(option);
+        }
+    }
+
+    function getTotalDaysPassed(year, season, phase) {
+        let daysInYear = (year - startYear) * 360; // Each year has 360 days (4 seasons * 90 days)
+
+        // Add days for completed seasons and phases within the current year
+        const seasonOrder = ['Frostheim', 'Hertzfall', 'Sonnendor', 'Lenzing'];
+        const phaseDays = { 'early': 29, 'high': 30, 'late': 31 };
+
+        let seasonIndex = seasonOrder.indexOf(season);
+        let totalDays = daysInYear + seasonIndex * 90; // Each season has 90 days
+
+        // Add phase days for the current season
+        if (phase === 'early') totalDays += 0;
+        else if (phase === 'high') totalDays += 29;
+        else if (phase === 'late') totalDays += 59;
+
+        return totalDays;
+    }
+
+    function updateCalendar() {
+        const selectedYear = parseInt(yearSelect.value);
+        const selectedSeason = seasonSelect.value;
+        const selectedPhase = phaseSelect.value;
+
+        const totalDaysPassed = getTotalDaysPassed(selectedYear, selectedSeason, selectedPhase);
+        const startDayIndex = (startDayOfWeek + totalDaysPassed) % 7;
+
+        let daysInPhase;
+        if (selectedPhase === 'early') daysInPhase = 29;
+        else if (selectedPhase === 'high') daysInPhase = 30;
+        else if (selectedPhase === 'late') daysInPhase = 31;
+
+        // Clear the current calendar
+        calendarBody.innerHTML = '';
+
+        // Generate days for the calendar
+        let day = 1;
+        for (let i = 0; i < Math.ceil(daysInPhase / 7); i++) {
+            let row = document.createElement('tr');
+            for (let j = 0; j < 7; j++) {
+                let cell = document.createElement('td');
+                if (i === 0 && j < startDayIndex) {
+                    cell.textContent = '';
+                } else if (day <= daysInPhase) {
+                    cell.textContent = day;
+                    day++;
+                } else {
+                    cell.textContent = ''; // Empty cells at the end of the calendar
+                }
+                row.appendChild(cell);
+            }
+            calendarBody.appendChild(row);
+        }
+    }
+
+    // Add event listeners to update calendar on selection change
+    ageSelect.addEventListener('change', () => {
+        populateYearOptions();
+        updateCalendar();
+    });
+    phaseSelect.addEventListener('change', updateCalendar);
+    seasonSelect.addEventListener('change', updateCalendar);
+    yearSelect.addEventListener('change', updateCalendar);
+
+    // Initial setup
+    populateYearOptions();
+    updateCalendar();
+</script>
+
+</body>
+</html>
